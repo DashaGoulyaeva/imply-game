@@ -15,7 +15,8 @@ loadImageForWord(secretWord);
 
 function loadImageForWord(word) {
     const image = document.getElementById("gameImage");
-    image.src = `https://via.placeholder.com/300?text=${word}`;
+    // Используем вашу локальную картинку
+    image.src = "test-image.jpg";;
 }
 
 
