@@ -64,51 +64,61 @@ function loadCards() {
 // Обработчик кнопки "Сделать выбор"
 submitButton.addEventListener('click', () => {
     if (!selectedCardId) return;
-    
+
     submitButton.disabled = true;
     showMessage("Обрабатываю ваш выбор...");
-    
-    // Отправляем выбор на сервер (бэкенд)
+
+    // ШАГ 1: Сохраняем выбор игрока
     fetch('http://localhost:5000/api/submit-choice', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-            card_id: selectedCardId, // Например, "02"
-            date: TODAY // Передаем дату для проверки
-        })
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ card_id: selectedCardId, date: TODAY })
     })
     .then(response => {
-        console.log("Ответ получен, статус:", response.status);
-        // Сначала читаем как текст, чтобы в любом случае увидеть ответ сервера
-        return response.text().then(text => {
-            console.log("Тело ответа (сырой текст):", text);
-            try {
-                // Пытаемся распарсить JSON
-                return JSON.parse(text);
-            } catch (e) {
-                console.error("Ответ не в формате JSON:", e);
-                throw new Error(`Сервер вернул не JSON. Ответ: "${text.slice(0, 100)}..."`);
-            }
-        });
+        if (!response.ok) throw new Error(`Ошибка сервера: ${response.status}`);
+        return response.json();
     })
-    .then(data => {
-        console.log("Распарсенный data:", data);
-        // Проверяем структуру ответа
-        if (data && data.success === true) {
-            showMessage(`✅ Спасибо! Вы выбрали карточку #${selectedCardId}.`);
-            console.log('Успех:', data.message);
-        } else {
-            // Если сервер вернул успех, но без флага success, или success=false
-            showMessage('❌ Сервер сообщил об ошибке.', true);
-            console.error('Структура ответа:', data);
+    .then(choiceData => {
+        // Проверяем ответ от endpoint сохранения
+        if (!choiceData || !choiceData.success) {
+            throw new Error('Сервер не подтвердил сохранение выбора.');
         }
+        console.log('✅ Выбор сохранён:', choiceData.message);
+        showMessage(`✅ Ваш выбор (#${selectedCardId}) сохранён. Загружаю статистику...`);
+
+        // ШАГ 2: Запрашиваем статистику ОТДЕЛЬНО
+        return fetch(`http://localhost:5000/api/stats?date=${TODAY}`);
+    })
+    .then(response => {
+        if (!response.ok) throw new Error(`Не удалось загрузить статистику: ${response.status}`);
+        return response.json();
+    })
+    .then(statsData => {
+        // Обрабатываем статистику
+        console.log('📊 Получена статистика:', statsData);
+        let finalMessage = `✅ Спасибо! Вы выбрали карточку #${selectedCardId}. `;
+
+        if (statsData.total_votes > 0 && statsData.top_card) {
+            finalMessage += `Сегодня всего выборов: ${statsData.total_votes}. Чаще всего выбирают карточку #${statsData.top_card} (${statsData.top_card_votes} раз).`;
+            // Подсветка популярной карточки (если это не выбранная игроком)
+            const popularCard = document.querySelector(`.card[data-id="${statsData.top_card}"]`);
+            if (popularCard && popularCard.dataset.id !== selectedCardId) {
+                popularCard.style.boxShadow = '0 0 0 3px gold';
+                popularCard.title = 'Самая популярная карточка сегодня';
+            }
+        } else {
+            finalMessage += 'Вы — первый сегодня!';
+        }
+        showMessage(finalMessage);
     })
     .catch(error => {
-        console.error('Ошибка в цепочке fetch:', error);
-        showMessage('⚠️ Проблема с отправкой выбора. Подробности в консоли (F12).', true);
-        submitButton.disabled = false; // Разблокируем кнопку при ошибке
+        console.error('❌ Ошибка в цепочке:', error);
+        // Даже если статистика не загрузилась, сообщаем, что выбор сохранён
+        showMessage(`✅ Ваш выбор (#${selectedCardId}) сохранён. (Статистика временно недоступна)`);
+    })
+    .finally(() => {
+        // В любом случае, через 5 секунд снимаем блокировку с кнопки
+        setTimeout(() => { submitButton.disabled = false; }, 5000);
     });
 });
     
