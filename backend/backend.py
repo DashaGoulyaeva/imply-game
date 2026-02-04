@@ -4,6 +4,8 @@ from flask_cors import CORS
 import json
 from datetime import datetime
 import os
+# Определяем базовую директорию проекта (папку, в которой лежит папка 'backend')
+PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 app = Flask(__name__)
 CORS(app)
@@ -15,7 +17,7 @@ def submit_choice():
     card_id = data.get('card_id')  # Например, "02"
     # 2. Определить путь к файлу для сегодняшнего дня
     today = datetime.now().strftime("%Y-%m-%d")
-    choices_file = f"daily_output/{today}/choices.json"
+    choices_file = os.path.join(PROJECT_ROOT, "daily_output", today, "choices.json")
     # 3. Прочитать старые выборы или создать новый список
     if os.path.exists(choices_file):
         with open(choices_file, 'r', encoding='utf-8') as f:
