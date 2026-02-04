@@ -35,5 +35,40 @@ def submit_choice():
     # 6. Ответить фронтенду, что всё ок
     return jsonify({"success": True, "message": "Выбор сохранён!"})
 
+@app.route('/api/stats', methods=['GET'])
+def get_stats():
+    """Возвращает статистику выборов для указанной даты (по умолчанию — сегодня)."""
+    # 1. Получаем дату из параметра запроса или берём сегодняшнюю
+    date = request.args.get('date', datetime.now().strftime("%Y-%m-%d"))
+    stats_file = os.path.join(PROJECT_ROOT, "daily_output", date, "choices.json")
+    
+    # 2. Если файла со статистикой нет — возвращаем пустой результат
+    if not os.path.exists(stats_file):
+        return jsonify({"date": date, "total_votes": 0, "top_card": None, "distribution": {}})
+    
+    # 3. Читаем и анализируем файл
+    with open(stats_file, 'r', encoding='utf-8') as f:
+        choices = json.load(f)
+    
+    # 4. Подсчитываем, сколько раз выбирали каждую карточку
+    distribution = {}
+    for choice in choices:
+        card_id = choice.get("card_id")
+        distribution[card_id] = distribution.get(card_id, 0) + 1
+    
+    # 5. Находим карточку-лидера
+    top_card = None
+    if distribution:
+        top_card = max(distribution, key=distribution.get)
+    
+    # 6. Формируем и возвращаем ответ
+    return jsonify({
+        "date": date,
+        "total_votes": len(choices),
+        "top_card": top_card,
+        "top_card_votes": distribution.get(top_card, 0) if top_card else 0,
+        "distribution": distribution
+    })
+
 if __name__ == '__main__':
     app.run(debug=True, port=5000)  # Сервер запустится на http://localhost:5000
