@@ -1,23 +1,38 @@
 <!DOCTYPE html>
-<html>
+<html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <title>Imply</title>
-    <link rel="stylesheet" href="style.css">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Imply: Картина Дня</title>
+    <link rel="stylesheet" href="src/style.css">
 </head>
 <body>
+    <div class="container">
+        <header>
+            <h1>Imply</h1>
+            <p class="subtitle">Картина Дня</p>
+            <p class="instructions">Посмотрите на 5 картинок. Какую атмосферу ("вайб") вы чувствуете? Выберите одну.</p>
+        </header>
 
-    <h1>Imply</h1>
-    <img id="gameImage" src="test-image.jpg" alt="Test image" width="300">
-    <br><br>
+        <main>
+            <!-- Контейнер для карточек -->
+            <div class="cards-container" id="cardsContainer">
+                <p>Загрузка картинок дня...</p>
+            </div>
 
-    <input type="text" id="guessInput" placeholder="Type your guess">
-    <br><br>
-    <button id="checkButton">Check</button>
-    <p id="resultText"></p>
+            <!-- Кнопка отправки выбора -->
+            <div class="action-area">
+                <button id="submitButton" disabled>Сделать выбор</button>
+                <p id="message" class="message"></p>
+            </div>
+        </main>
 
+        <footer>
+            <p>Игра про вайб и воображение. Нет правильных ответов.</p>
+        </footer>
+    </div>
 
-    <script src="script.js"></script>
-
+    <!-- Подключаем обновлённый скрипт -->
+    <script src="src/app.js"></script>
 </body>
 </html>
